@@ -19,7 +19,7 @@ namespace ilnessChecker
         {
             using (IDbConnection cnn = new MySqlConnection(loadConnectionString()))
             {
-                var output = cnn.Query<DiseaseEntity>("select * from diseases", new DynamicParameters());
+                var output = cnn.Query<DiseaseEntity>("select * from diseases order by id", new DynamicParameters());
                 return output.ToList();
             }
         }
@@ -28,7 +28,7 @@ namespace ilnessChecker
         {
             using (IDbConnection cnn = new MySqlConnection(loadConnectionString()))
             {
-                cnn.Execute("insert into diseases (disease) values (@Disease)", disease);
+                cnn.Execute("insert into diseases (id, disease) values (@Id, @Disease)", disease);
             }
         }
         public static void DeleteDisease(DiseaseEntity disease)
@@ -83,7 +83,7 @@ namespace ilnessChecker
         {
             using (IDbConnection cnn = new MySqlConnection(loadConnectionString()))
             {
-                var output = cnn.Query<SymptomEntity>("select * from symptoms", new DynamicParameters());
+                var output = cnn.Query<SymptomEntity>("select * from symptoms order by id", new DynamicParameters());
                 return output.ToList();
             }
         }

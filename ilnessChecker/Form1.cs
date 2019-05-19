@@ -13,6 +13,7 @@ namespace ilnessChecker
     public partial class Form1 : Form
     {
         AddingForm addingForm;
+        TestForm testForm;
         public Form1()
         {
             InitializeComponent();
@@ -24,6 +25,12 @@ namespace ilnessChecker
         {
             addingForm = new AddingForm();
             addingForm.Show();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            testForm = new TestForm();
+            testForm.Show();
         }
     }
 }

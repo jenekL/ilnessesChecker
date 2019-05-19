@@ -1,6 +1,6 @@
 ﻿namespace ilnessChecker
 {
-    partial class TestForm
+    partial class Result
     {
         /// <summary>
         /// Required designer variable.
@@ -30,15 +30,14 @@
         {
             this.SuspendLayout();
             // 
-            // TestForm
+            // Result
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(407, 450);
-            this.Name = "TestForm";
-            this.Text = "TestForm";
-            this.Load += new System.EventHandler(this.TestForm_Load);
+            this.ClientSize = new System.Drawing.Size(129, 109);
+            this.Name = "Result";
+            this.Text = "Result";
+            this.Load += new System.EventHandler(this.Result_Load);
             this.ResumeLayout(false);
 
         }

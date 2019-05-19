@@ -23,7 +23,35 @@ namespace ilnessChecker
         {
             InitializeComponent();
             this.WindowState = FormWindowState.Maximized;
-            
+
+            addDiseaseButton = new Button();
+            addDiseaseButton.Click += (object sender, EventArgs e) =>
+            {
+                if (diseaseText.Text != "")
+                {
+                    DiseaseEntity diseaseEntity = new DiseaseEntity(DBAPI.getMAXDiseaseID() + 1, diseaseText.Text);
+                    DBAPI.SaveDisease(diseaseEntity);
+                    foreach (SymptomsComp s in symptomsComps)
+                    {
+                        if (s.isChecked())
+                        {
+                            DBAPI.SaveMatch(new MatchesEntity(diseaseEntity.Id,
+                                s.Id, Double.Parse(s.Confidence.Text), Double.Parse(s.Distrust.Text)));
+                        }
+                    }
+                    clearDiseaseAdd();
+                    setDiseaseAdd();
+                    clearDiseaseList();
+                    setDiseaseList();
+
+                }
+            };
+            addDiseaseButton.Text = "Добавить болезнь";
+            this.Controls.Add(addDiseaseButton);
+
+
+
+
         }
 
         private void AddingForm_Load(object sender, EventArgs e)
@@ -35,10 +63,20 @@ namespace ilnessChecker
 
         private void setSymptomsAdd()
         {
+            int x = this.Width / 2;
+            int y = 50;
+            Label naming = new Label();
+            naming.Text = "Добавить симптом:";
+            naming.AutoSize = true;
+            naming.Location = new System.Drawing.Point(x, y);
+            this.Controls.Add(naming);
+            y += 30;
+
             symptomText = new TextBox();
-            symptomText.Location = new System.Drawing.Point(this.Width / 2 + 30, 50);
+            symptomText.Location = new System.Drawing.Point(x, y);
             Button addSympbutton = new Button();
-            addSympbutton.Location = new System.Drawing.Point(this.Width / 2 + 30, 70);
+            addSympbutton.Location = new System.Drawing.Point(x, y + 20);
+            addSympbutton.Text = "Добавить симптом";
             addSympbutton.Click += (object sender, EventArgs e) =>
             {
                 if (symptomText.Text != "")
@@ -66,7 +104,6 @@ namespace ilnessChecker
                 this.Controls.Remove(s.Button);
             }
             diseaseText.Text = "";
-            this.Controls.Remove(addDiseaseButton);
             
         }
         private void clearDiseaseList()
@@ -79,8 +116,15 @@ namespace ilnessChecker
         private void setDiseaseList()
         {
             var list = DBAPI.LoadDiseases();
-            int x = this.Width / 2 + 30;
-            int y = 100;
+            int x = this.Width - 400;
+            int y = 50;
+            Label naming = new Label();
+            naming.Text = "Список болезней:";
+            naming.AutoSize = true;
+            naming.Location = new System.Drawing.Point(x, y);
+            this.Controls.Add(naming);
+            y += 30;
+
             foreach (DiseaseEntity d in list)
             {
                 Label name = new Label();
@@ -92,6 +136,7 @@ namespace ilnessChecker
                 delete.Click += (object sender, EventArgs e) =>
                 {
                     DBAPI.DeleteDisease(d);
+                    this.Controls.Remove(delete);
                     clearDiseaseList();
                     setDiseaseList();
                 };
@@ -119,72 +164,86 @@ namespace ilnessChecker
         private void setDiseaseAdd()
         {
             int x = 50, y = 50;
-
-            diseaseText = new TextBox();
-
-            diseaseText.Location = new System.Drawing.Point(x, y);
-            this.Controls.Add(diseaseText);
-            y += 40;
-
-            var symptoms = DBAPI.LoadSymptoms();
-
-            foreach(SymptomEntity s in symptoms)
+            try
             {
-                CheckBox cb = new CheckBox();
-                TextBox conf = new TextBox();
-                TextBox distr = new TextBox();
-                Button delbutton = new Button();
+                diseaseText = new TextBox();
 
-                cb.Location = new System.Drawing.Point(x, y);
-                //label.Location = new System.Drawing.Point(x + 20, y);
-                cb.Text = s.Symptom;
-                cb.AutoSize = true;
-                //label.AutoSize = true;
-                conf.Location = new System.Drawing.Point(x + 220, y);
-                conf.Width = 50;
-                distr.Location = new System.Drawing.Point(x + 280, y);
-                distr.Width = 50;
+                diseaseText.Location = new System.Drawing.Point(x, y);
+                this.Controls.Add(diseaseText);
+                y += 40;
 
-                delbutton.Text = "delete";
-                delbutton.AutoSize = true;
-                delbutton.Location = new System.Drawing.Point(x + 340, y);
-                delbutton.Click += (object sender, EventArgs e) =>
+                var symptoms = DBAPI.LoadSymptoms();
+
+                foreach (SymptomEntity s in symptoms)
                 {
-                    DBAPI.DeleteSymptom(s);
-                    clearDiseaseAdd();
-                    setDiseaseAdd();
-                };
+                    CheckBox cb = new CheckBox();
+                    TextBox conf = new TextBox();
+                    TextBox distr = new TextBox();
+                    Button delbutton = new Button();
 
-                this.Controls.AddRange(new System.Windows.Forms.Control[] { cb, conf, distr, delbutton});
-                symptomsComps.Add(new SymptomsComp(cb, conf, distr, s.Id, delbutton));
+                    cb.Location = new System.Drawing.Point(x, y);
+                    //label.Location = new System.Drawing.Point(x + 20, y);
+                    cb.Text = s.Symptom;
+                    cb.AutoSize = true;
+                    //label.AutoSize = true;
+                    conf.Location = new System.Drawing.Point(x + 220, y);
+                    conf.Width = 50;
+                    distr.Location = new System.Drawing.Point(x + 280, y);
+                    distr.Width = 50;
 
-                y += 30;
-            }
-
-            addDiseaseButton = new Button();
-            addDiseaseButton.Click += (object sender, EventArgs e) =>
-            {
-                if (diseaseText.Text != "") {
-                    DiseaseEntity diseaseEntity = new DiseaseEntity(DBAPI.getMAXDiseaseID() + 1, diseaseText.Text);
-                    DBAPI.SaveDisease(diseaseEntity);
-                    foreach(SymptomsComp s in symptomsComps)
+                    distr.Validating += (object sender, CancelEventArgs e) =>
                     {
-                        if (s.isChecked())
-                        {
-                            DBAPI.SaveMatch(new MatchesEntity(diseaseEntity.Id, 
-                                s.Id, Double.Parse(s.Confidence.Text), Double.Parse(s.Distrust.Text)));
-                        }
-                    }
-                    clearDiseaseAdd();
-                    setDiseaseAdd();
-                    clearDiseaseList();
-                    setDiseaseList();
+                        // if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Tab)
+                        // {
+                        double d1 = -1, d2 = -1;
+                        double.TryParse(distr.Text, out d1);
+                        double.TryParse(conf.Text, out d2);
+                            if (d1 > d2 && d1 != -1 && d2 != -1)
+                            {
+                                MessageBox.Show("Значение должно быть меньше меры доверия");
+                            }
+                            else
+                            {
+                                if (d1 <= 0)
+                                {
+                                    MessageBox.Show("Значение должно быть положительным");
+                                }
+                            }
+                      //  }
+                    };
+                    conf.Validating += (object sender, CancelEventArgs e) =>
+                    {
+                        double d1 = -1;
+                        double.TryParse(conf.Text, out d1);
+                            if ((d1 <= 0 || d1 > 1) && d1 != -1)
+                            {
+                                MessageBox.Show("Значение должно быть в диапазоне от 0 до 1");
+                            }
+                    };
 
+
+                 
+                    delbutton.Location = new System.Drawing.Point(x + 340, y);
+                    delbutton.Text = "X";
+                    delbutton.AutoSize = true;
+                    delbutton.Click += (object sender, EventArgs e) =>
+                    {
+                        DBAPI.DeleteSymptom(s);
+                        clearDiseaseAdd();
+                        setDiseaseAdd();
+                    };
+
+                    this.Controls.AddRange(new System.Windows.Forms.Control[] { cb, conf, distr, delbutton });
+                    symptomsComps.Add(new SymptomsComp(cb, conf, distr, s.Id, delbutton));
+
+                    y += 30;
                 }
-            };
-            addDiseaseButton.Location = new System.Drawing.Point(x, y + 20);
-            addDiseaseButton.Text = "Добавить болезнь";
-            this.Controls.Add(addDiseaseButton);
+
+                addDiseaseButton.Location = new System.Drawing.Point(x, y + 20);
+            }catch(Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
 
     }
