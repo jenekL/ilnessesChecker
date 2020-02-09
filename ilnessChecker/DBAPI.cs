@@ -23,6 +23,14 @@ namespace ilnessChecker
                 return output.ToList();
             }
         }
+        public static List<DiseaseEntity> LoadMatchesByDiseaseID(int id)
+        {
+            using (IDbConnection cnn = new MySqlConnection(loadConnectionString()))
+            {
+                var output = cnn.Query<DiseaseEntity>("select * from matches where diseases_id = @id", new { id});
+                return output.ToList();
+            }
+        }
 
         public static void SaveDisease(DiseaseEntity disease)
         {

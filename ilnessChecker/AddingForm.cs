@@ -16,6 +16,7 @@ namespace ilnessChecker
     {
         List<SymptomsComp> symptomsComps = new List<SymptomsComp>();
         List<Label> diseases = new List<Label>();
+        List<Button> diseaseButtons = new List<Button>();
         TextBox diseaseText;
         TextBox symptomText;
         Button addDiseaseButton;
@@ -25,31 +26,13 @@ namespace ilnessChecker
             this.WindowState = FormWindowState.Maximized;
 
             addDiseaseButton = new Button();
-            addDiseaseButton.Click += (object sender, EventArgs e) =>
-            {
-                if (diseaseText.Text != "")
-                {
-                    DiseaseEntity diseaseEntity = new DiseaseEntity(DBAPI.getMAXDiseaseID() + 1, diseaseText.Text);
-                    DBAPI.SaveDisease(diseaseEntity);
-                    foreach (SymptomsComp s in symptomsComps)
-                    {
-                        if (s.isChecked())
-                        {
-                            DBAPI.SaveMatch(new MatchesEntity(diseaseEntity.Id,
-                                s.Id, Double.Parse(s.Confidence.Text), Double.Parse(s.Distrust.Text)));
-                        }
-                    }
-                    clearDiseaseAdd();
-                    setDiseaseAdd();
-                    clearDiseaseList();
-                    setDiseaseList();
-
-                }
-            };
             addDiseaseButton.Text = "Добавить болезнь";
+            addDiseaseButton.Click += setAddButton_Click;
             this.Controls.Add(addDiseaseButton);
 
-
+            diseaseText = new TextBox();
+            diseaseText.Location = new System.Drawing.Point(50, 50);
+            this.Controls.Add(diseaseText);
 
 
         }
@@ -81,9 +64,16 @@ namespace ilnessChecker
             {
                 if (symptomText.Text != "")
                 {
-                    DBAPI.SaveSymptom(new SymptomEntity(DBAPI.getMAXSymptomID() + 1, symptomText.Text));
-                    clearDiseaseAdd();
-                    setDiseaseAdd();
+                    try
+                    {
+                        DBAPI.SaveSymptom(new SymptomEntity(DBAPI.getMAXSymptomID() + 1, symptomText.Text));
+                        clearDiseaseAdd();
+                        setDiseaseAdd();
+                    }
+                    catch(Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+                    }
                 }
             };
 
@@ -103,6 +93,9 @@ namespace ilnessChecker
                 this.Controls.Remove(s.Distrust);
                 this.Controls.Remove(s.Button);
             }
+           // this.Controls.Remove(addDiseaseButton);
+           // addDiseaseButton.Click -= setAddButton_Click;
+           // addDiseaseButton.Click += setAddButton_Click;
             diseaseText.Text = "";
             
         }
@@ -112,7 +105,60 @@ namespace ilnessChecker
             {
                 this.Controls.Remove(label);
             }
+            foreach(Button b in diseaseButtons)
+            {
+                Controls.Remove(b);
+            }
         }
+
+        private bool checkVxojdenie()
+        {
+            var diseases = DBAPI.LoadDiseases();
+
+            var comps = symptomsComps.GroupBy(k => k.isChecked()).ToList();
+
+            foreach (DiseaseEntity d in diseases)
+            {
+                var matchesids = DBAPI.LoadMatchesByDisease(d.Id);
+                var sympts = matchesids.Select(k => k.Symptoms_id).ToList();
+
+                int count = 0;
+
+                foreach (SymptomsComp m in comps[0])
+                {
+                    foreach(MatchesEntity match in matchesids)
+                    {
+                        if (m.Id == match.Symptoms_id)
+                        {
+                            count++;
+                        }
+                    }
+                   
+                }
+
+                if (comps[0].Count() == count && comps[0].Count() < matchesids.Count)
+                {
+                    MessageBox.Show("Содержится");
+                    System.Console.WriteLine("Содержится");
+                    return false;
+                }
+                if (comps[0].Count() == count && comps[0].Count() == matchesids.Count)
+                {
+                    MessageBox.Show("Существует");
+                    System.Console.WriteLine("Существует");
+                    return false;
+                }
+                if (matchesids.Count == count && comps[0].Count() > matchesids.Count && matchesids != null)
+                {
+                    MessageBox.Show("Содержит");
+                    System.Console.WriteLine("Содержит");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+       
         private void setDiseaseList()
         {
             var list = DBAPI.LoadDiseases();
@@ -136,7 +182,8 @@ namespace ilnessChecker
                 delete.Click += (object sender, EventArgs e) =>
                 {
                     DBAPI.DeleteDisease(d);
-                    this.Controls.Remove(delete);
+                    //this.Controls.Remove(delete);
+                   
                     clearDiseaseList();
                     setDiseaseList();
                 };
@@ -157,20 +204,17 @@ namespace ilnessChecker
                 name.Location = new System.Drawing.Point(x, y);
                 y += 30;
                 diseases.Add(name);
+                diseaseButtons.Add(delete);
                 this.Controls.Add(name);
                 this.Controls.Add(delete);
             }
         }
         private void setDiseaseAdd()
         {
-            int x = 50, y = 50;
+            symptomsComps.Clear();
+            int x = 50, y = 90;
             try
             {
-                diseaseText = new TextBox();
-
-                diseaseText.Location = new System.Drawing.Point(x, y);
-                this.Controls.Add(diseaseText);
-                y += 40;
 
                 var symptoms = DBAPI.LoadSymptoms();
 
@@ -238,11 +282,48 @@ namespace ilnessChecker
 
                     y += 30;
                 }
-
                 addDiseaseButton.Location = new System.Drawing.Point(x, y + 20);
-            }catch(Exception ex)
+
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void setAddButton_Click(object sender, EventArgs e)
+        {
+            if (diseaseText.Text != "")
+            {
+                if (checkVxojdenie())
+                {
+                    DiseaseEntity diseaseEntity = new DiseaseEntity(DBAPI.getMAXDiseaseID() + 1, diseaseText.Text);
+                    DBAPI.SaveDisease(diseaseEntity);
+                    foreach (SymptomsComp s in symptomsComps)
+                    {
+                        if (s.isChecked())
+                        {
+                            try
+                            {
+                                DBAPI.SaveMatch(new MatchesEntity(diseaseEntity.Id,
+                                    s.Id, Double.Parse(s.Confidence.Text), Double.Parse(s.Distrust.Text)));
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show(ex.ToString());
+                            }
+                        }
+                    }
+                    clearDiseaseAdd();
+                    setDiseaseAdd();
+                    clearDiseaseList();
+                    setDiseaseList();
+                }
+                else
+                {
+                    MessageBox.Show("Так нельзя");
+                }
+
             }
         }
 
